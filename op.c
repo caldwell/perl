@@ -1107,6 +1107,11 @@ Perl_scalarvoid(pTHX_ OP *o)
        useless = "negative pattern binding (!~)";
        break;
 
+    case OP_SUBST:
+	if (cPMOPo->op_pmflags & PMf_NONDESTRUCT)
+	    useless = "Non-destructive substitution (s///r)";
+	break;
+
     case OP_RV2GV:
     case OP_RV2SV:
     case OP_RV2AV:
@@ -2232,7 +2237,9 @@ Perl_bind_match(pTHX_ I32 type, OP *left, OP *right)
 	right->op_flags |= OPf_STACKED;
 	if (rtype != OP_MATCH &&
             ! (rtype == OP_TRANS &&
-               right->op_private & OPpTRANS_IDENTICAL))
+               right->op_private & OPpTRANS_IDENTICAL) &&
+	    ! (rtype == OP_SUBST &&
+	       (cPMOPx(right)->op_pmflags & PMf_NONDESTRUCT)))
 	    newleft = mod(left, rtype);
 	else
 	    newleft = left;
