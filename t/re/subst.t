@@ -7,7 +7,33 @@ BEGIN {
 }
 
 require './test.pl';
-plan( tests => 149 );
+plan( tests => 158 );
+
+$_ = 'david';
+$a = s/david/rules/r;
+ok( $_ eq 'david' && $a eq 'rules', 'non-destructive substitute' );
+
+$a = "david" =~ s/david/rules/r;
+ok( $a eq 'rules', 's///r with constant' );
+
+$a = "david" =~ s/david/"is"."great"/er;
+ok( $a eq 'isgreat', 's///er' );
+
+$a = "daviddavid" =~ s/david/cool/gr;
+ok( $a eq 'coolcool', 's///gr' );
+
+$a = 'david';
+$b = $a =~ s/david/sucks/r =~ s/sucks/rules/r;
+ok( $a eq 'david' && $b eq 'rules', 'chained s///r' );
+
+$a = 'david';
+$b = $a =~ s/xxx/sucks/r;
+ok( $a eq 'david' && $b eq 'david', 'non matching s///r' );
+
+$a = 'david';
+for (0..2) {
+    ok( 'david' =~ s/$a/rules/ro eq 'rules', 's///ro '.$_ );
+}
 
 $x = 'foo';
 $_ = "x";

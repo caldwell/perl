@@ -2107,6 +2107,11 @@ PP(pp_subst)
 	EXTEND(SP,1);
     }
 
+    /* In non-destructive replacement mode, duplicate target scalar so it
+     * remains unchanged. */
+    if (rpm->op_pmflags & PMf_NONDESTRUCT)
+	TARG = newSVsv(TARG);
+
 #ifdef PERL_OLD_COPY_ON_WRITE
     /* Awooga. Awooga. "bool" types that are actually char are dangerous,
        because they make integers such as 256 "false".  */
@@ -2230,7 +2235,10 @@ PP(pp_subst)
 	if (!matched)
 	{
 	    SPAGAIN;
-	    PUSHs(&PL_sv_no);
+	    if (rpm->op_pmflags & PMf_NONDESTRUCT)
+		PUSHs(TARG);
+	    else
+		PUSHs(&PL_sv_no);
 	    LEAVE_SCOPE(oldsave);
 	    RETURN;
 	}
@@ -2284,7 +2292,10 @@ PP(pp_subst)
 	    }
 	    TAINT_IF(rxtainted & 1);
 	    SPAGAIN;
-	    PUSHs(&PL_sv_yes);
+	    if (rpm->op_pmflags & PMf_NONDESTRUCT)
+		PUSHs(TARG);
+	    else
+		PUSHs(&PL_sv_yes);
 	}
 	else {
 	    do {
@@ -2313,7 +2324,10 @@ PP(pp_subst)
 	    }
 	    TAINT_IF(rxtainted & 1);
 	    SPAGAIN;
-	    mPUSHi((I32)iters);
+	    if (rpm->op_pmflags & PMf_NONDESTRUCT)
+		PUSHs(TARG);
+	    else
+		mPUSHi((I32)iters);
 	}
 	(void)SvPOK_only_UTF8(TARG);
 	TAINT_IF(rxtainted);
@@ -2399,7 +2413,10 @@ PP(pp_subst)
 
 	TAINT_IF(rxtainted & 1);
 	SPAGAIN;
-	mPUSHi((I32)iters);
+	if (rpm->op_pmflags & PMf_NONDESTRUCT)
+	    PUSHs(TARG);
+	else
+	    mPUSHi((I32)iters);
 
 	(void)SvPOK_only(TARG);
 	if (doutf8)
@@ -2415,7 +2432,10 @@ PP(pp_subst)
 nope:
 ret_no:
     SPAGAIN;
-    PUSHs(&PL_sv_no);
+    if (rpm->op_pmflags & PMf_NONDESTRUCT)
+	PUSHs(TARG);
+    else
+	PUSHs(&PL_sv_no);
     LEAVE_SCOPE(oldsave);
     RETURN;
 }
