@@ -160,6 +160,7 @@ EXTCONST char* const PL_op_name[] = {
 	"lc",
 	"quotemeta",
 	"rv2av",
+	"rv2av_novivify",
 	"aelemfast",
 	"aelem",
 	"aslice",
@@ -172,6 +173,7 @@ EXTCONST char* const PL_op_name[] = {
 	"delete",
 	"exists",
 	"rv2hv",
+	"rv2hv_novivify",
 	"helem",
 	"hslice",
 	"boolkeys",
@@ -206,7 +208,9 @@ EXTCONST char* const PL_op_name[] = {
 	"orassign",
 	"dorassign",
 	"method",
+	"method_safe",
 	"entersub",
+	"entersub_safe",
 	"leavesub",
 	"leavesublv",
 	"caller",
@@ -232,6 +236,7 @@ EXTCONST char* const PL_op_name[] = {
 	"goto",
 	"exit",
 	"method_named",
+	"method_named_safe",
 	"entergiven",
 	"leavegiven",
 	"enterwhen",
@@ -537,6 +542,7 @@ EXTCONST char* const PL_op_desc[] = {
 	"lc",
 	"quotemeta",
 	"array dereference",
+	"non-vivifying array dereference",
 	"constant array element",
 	"array element",
 	"array slice",
@@ -549,6 +555,7 @@ EXTCONST char* const PL_op_desc[] = {
 	"delete",
 	"exists",
 	"hash dereference",
+	"non-vivifying hash dereference",
 	"hash element",
 	"hash slice",
 	"boolkeys",
@@ -583,7 +590,9 @@ EXTCONST char* const PL_op_desc[] = {
 	"logical or assignment (||=)",
 	"defined or assignment (//=)",
 	"method lookup",
+	"&&->method lookup",
 	"subroutine entry",
+	"&&->subroutine entry",
 	"subroutine exit",
 	"lvalue subroutine return",
 	"caller",
@@ -609,6 +618,7 @@ EXTCONST char* const PL_op_desc[] = {
 	"goto",
 	"exit",
 	"method with known name",
+	"&&->method with known name",
 	"given()",
 	"leave given block",
 	"when()",
@@ -928,6 +938,7 @@ EXT Perl_ppaddr_t PL_ppaddr[] /* or perlvars.h */
 	Perl_pp_lc,
 	Perl_pp_quotemeta,
 	Perl_pp_rv2av,
+	Perl_pp_rv2av,	/* Perl_pp_rv2av_novivify */
 	Perl_pp_aelemfast,
 	Perl_pp_aelem,
 	Perl_pp_aslice,
@@ -940,6 +951,7 @@ EXT Perl_ppaddr_t PL_ppaddr[] /* or perlvars.h */
 	Perl_pp_delete,
 	Perl_pp_exists,
 	Perl_pp_rv2av,	/* Perl_pp_rv2hv */
+	Perl_pp_rv2av,	/* Perl_pp_rv2hv_novivify */
 	Perl_pp_helem,
 	Perl_pp_hslice,
 	Perl_pp_boolkeys,
@@ -973,8 +985,10 @@ EXT Perl_ppaddr_t PL_ppaddr[] /* or perlvars.h */
 	Perl_pp_and,	/* Perl_pp_andassign */
 	Perl_pp_or,	/* Perl_pp_orassign */
 	Perl_pp_defined,	/* Perl_pp_dorassign */
-	Perl_pp_method,
-	Perl_pp_entersub,
+	Perl_pp_method,	/* Perl_pp_method */
+	Perl_pp_method,	/* Perl_pp_method_safe */
+	Perl_pp_entersub,	/* Perl_pp_entersub */
+	Perl_pp_entersub,	/* Perl_pp_entersub_safe */
 	Perl_pp_leavesub,
 	Perl_pp_leavesublv,
 	Perl_pp_caller,
@@ -999,7 +1013,8 @@ EXT Perl_ppaddr_t PL_ppaddr[] /* or perlvars.h */
 	Perl_pp_goto,	/* Perl_pp_dump */
 	Perl_pp_goto,
 	Perl_pp_exit,
-	Perl_pp_method_named,
+	Perl_pp_method_named,	/* Perl_pp_method_named */
+	Perl_pp_method_named,	/* Perl_pp_method_named_safe */
 	Perl_pp_entergiven,
 	Perl_pp_leavegiven,
 	Perl_pp_enterwhen,
@@ -1316,6 +1331,7 @@ EXT Perl_check_t PL_check[] /* or perlvars.h */
 	Perl_ck_fun,		/* lc */
 	Perl_ck_fun,		/* quotemeta */
 	Perl_ck_rvconst,	/* rv2av */
+	Perl_ck_rvconst,	/* rv2av_novivify */
 	Perl_ck_null,		/* aelemfast */
 	Perl_ck_null,		/* aelem */
 	Perl_ck_null,		/* aslice */
@@ -1328,6 +1344,7 @@ EXT Perl_check_t PL_check[] /* or perlvars.h */
 	Perl_ck_delete,		/* delete */
 	Perl_ck_exists,		/* exists */
 	Perl_ck_rvconst,	/* rv2hv */
+	Perl_ck_rvconst,	/* rv2hv_novivify */
 	Perl_ck_null,		/* helem */
 	Perl_ck_null,		/* hslice */
 	Perl_ck_fun,		/* boolkeys */
@@ -1362,7 +1379,9 @@ EXT Perl_check_t PL_check[] /* or perlvars.h */
 	Perl_ck_null,		/* orassign */
 	Perl_ck_null,		/* dorassign */
 	Perl_ck_method,		/* method */
+	Perl_ck_method,		/* method_safe */
 	Perl_ck_subr,		/* entersub */
+	Perl_ck_subr,		/* entersub_safe */
 	Perl_ck_null,		/* leavesub */
 	Perl_ck_null,		/* leavesublv */
 	Perl_ck_fun,		/* caller */
@@ -1388,6 +1407,7 @@ EXT Perl_check_t PL_check[] /* or perlvars.h */
 	Perl_ck_null,		/* goto */
 	Perl_ck_exit,		/* exit */
 	Perl_ck_null,		/* method_named */
+	Perl_ck_null,		/* method_named_safe */
 	Perl_ck_null,		/* entergiven */
 	Perl_ck_null,		/* leavegiven */
 	Perl_ck_null,		/* enterwhen */
@@ -1698,6 +1718,7 @@ EXTCONST U32 PL_opargs[] = {
 	0x00009b8e,	/* lc */
 	0x00009b8e,	/* quotemeta */
 	0x00000148,	/* rv2av */
+	0x00000148,	/* rv2av_novivify */
 	0x00013604,	/* aelemfast */
 	0x00013204,	/* aelem */
 	0x00023401,	/* aslice */
@@ -1710,6 +1731,7 @@ EXTCONST U32 PL_opargs[] = {
 	0x00001b00,	/* delete */
 	0x00001b04,	/* exists */
 	0x00000148,	/* rv2hv */
+	0x00000148,	/* rv2hv_novivify */
 	0x00014204,	/* helem */
 	0x00024401,	/* hslice */
 	0x00004b00,	/* boolkeys */
@@ -1744,7 +1766,9 @@ EXTCONST U32 PL_opargs[] = {
 	0x00000304,	/* orassign */
 	0x00000304,	/* dorassign */
 	0x00000140,	/* method */
+	0x00000140,	/* method_safe */
 	0x00002149,	/* entersub */
+	0x00002149,	/* entersub_safe */
 	0x00000100,	/* leavesub */
 	0x00000100,	/* leavesublv */
 	0x00009b08,	/* caller */
@@ -1770,6 +1794,7 @@ EXTCONST U32 PL_opargs[] = {
 	0x00000d44,	/* goto */
 	0x00009b44,	/* exit */
 	0x00000640,	/* method_named */
+	0x00000640,	/* method_named_safe */
 	0x00000340,	/* entergiven */
 	0x00000100,	/* leavegiven */
 	0x00000340,	/* enterwhen */

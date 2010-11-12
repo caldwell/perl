@@ -116,7 +116,8 @@
      PREDEC = 331,
      PREINC = 332,
      ARROW = 333,
-     PEG = 334
+     SAFEARROW = 334,
+     PEG = 335
    };
 #endif
 /* Tokens.  */
@@ -196,7 +197,8 @@
 #define PREDEC 331
 #define PREINC 332
 #define ARROW 333
-#define PEG 334
+#define SAFEARROW 334
+#define PEG 335
 
 
 

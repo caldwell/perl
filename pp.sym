@@ -172,6 +172,7 @@ Perl_pp_uc
 Perl_pp_lc
 Perl_pp_quotemeta
 Perl_pp_rv2av
+Perl_pp_rv2av_novivify
 Perl_pp_aelemfast
 Perl_pp_aelem
 Perl_pp_aslice
@@ -184,6 +185,7 @@ Perl_pp_keys
 Perl_pp_delete
 Perl_pp_exists
 Perl_pp_rv2hv
+Perl_pp_rv2hv_novivify
 Perl_pp_helem
 Perl_pp_hslice
 Perl_pp_boolkeys
@@ -218,7 +220,9 @@ Perl_pp_andassign
 Perl_pp_orassign
 Perl_pp_dorassign
 Perl_pp_method
+Perl_pp_method_safe
 Perl_pp_entersub
+Perl_pp_entersub_safe
 Perl_pp_leavesub
 Perl_pp_leavesublv
 Perl_pp_caller
@@ -244,6 +248,7 @@ Perl_pp_dump
 Perl_pp_goto
 Perl_pp_exit
 Perl_pp_method_named
+Perl_pp_method_named_safe
 Perl_pp_entergiven
 Perl_pp_leavegiven
 Perl_pp_enterwhen
