@@ -308,10 +308,10 @@ invert_opset function.
 
     rv2sv sassign
 
-    rv2av aassign aelem aelemfast aslice av2arylen
+    rv2av rv2av_novivify aassign aelem aelemfast aslice av2arylen
 
-    rv2hv helem hslice each values keys exists delete aeach akeys avalues
-    boolkeys reach rvalues rkeys
+    rv2hv rv2hv_novivify helem hslice each values keys exists delete
+    aeach akeys avalues boolkeys reach rvalues rkeys
 
     preinc i_preinc predec i_predec postinc i_postinc postdec i_postdec
     int hex oct abs pow multiply i_multiply divide i_divide
@@ -338,6 +338,7 @@ invert_opset function.
     rv2cv anoncode prototype
 
     entersub leavesub leavesublv return method method_named -- XXX loops via recursion?
+    entersub_safe method_safe method_named_safe
 
     leaveeval -- needed for Safe to operate, is safe without entereval
 
