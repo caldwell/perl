@@ -104,10 +104,13 @@ my @raw_alias = (
 		 Perl_pp_shift => ['pop'],
 		 Perl_pp_sin => [qw(cos exp log sqrt)],
 		 Perl_pp_bit_or => ['bit_xor'],
-		 Perl_pp_rv2av => ['rv2hv'],
+		 Perl_pp_rv2av => [qw(rv2hv rv2av_novivify rv2hv_novivify)],
 		 Perl_pp_akeys => ['avalues'],
 		 Perl_pp_rkeys => [qw(rvalues reach)],
 		 Perl_pp_trans => [qw(trans transr)],
+		 Perl_pp_method => [qw(method method_safe)],
+		 Perl_pp_method_named => [qw(method_named method_named_safe)],
+		 Perl_pp_entersub => [qw(entersub entersub_safe)],
 		);
 
 while (my ($func, $names) = splice @raw_alias, 0, 2) {
@@ -773,6 +776,7 @@ quotemeta	quotemeta		ck_fun		fstu%	S?
 # Arrays.
 
 rv2av		array dereference	ck_rvconst	dt1	
+rv2av_novivify	non-vivifying array dereference	ck_rvconst	dt1	
 aelemfast	constant array element	ck_null		s$	A S
 aelem		array element		ck_null		s2	A S
 aslice		array slice		ck_null		m@	A L
@@ -789,6 +793,7 @@ keys		keys			ck_each		t%	H
 delete		delete			ck_delete	%	S
 exists		exists			ck_exists	is%	S
 rv2hv		hash dereference	ck_rvconst	dt1	
+rv2hv_novivify	non-vivifying hash dereference	ck_rvconst	dt1	
 helem		hash element		ck_null		s2	H S
 hslice		hash slice		ck_null		m@	H L
 boolkeys	boolkeys		ck_fun		%	H
@@ -839,7 +844,9 @@ orassign	logical or assignment (||=)	ck_null		s|
 dorassign	defined or assignment (//=)	ck_null		s|
 
 method		method lookup		ck_method	d1
+method_safe	&&->method lookup	ck_method	d1
 entersub	subroutine entry	ck_subr		dmt1	L
+entersub_safe	&&->subroutine entry	ck_subr		dmt1	L
 leavesub	subroutine exit		ck_null		1	
 leavesublv	lvalue subroutine return	ck_null		1	
 caller		caller			ck_fun		t%	S?
@@ -866,6 +873,7 @@ dump		dump			ck_null		ds}
 goto		goto			ck_null		ds}	
 exit		exit			ck_exit		ds%	S?
 method_named	method with known name	ck_null		d$
+method_named_safe	&&->method with known name	ck_null		d$
 
 entergiven	given()			ck_null		d|
 leavegiven	leave given block	ck_null		1

@@ -88,6 +88,7 @@
 %token <i_tkval> COLONATTR
 
 %type <i_tkval> lpar_or_qw
+%type <i_tkval> arrow
 
 %type <ival> grammar remember mremember
 %type <ival>  startsub startanonsub startformsub
@@ -130,6 +131,7 @@
 %right <i_tkval> POWOP
 %nonassoc <i_tkval> PREINC PREDEC POSTINC POSTDEC
 %left <i_tkval> ARROW
+%left <i_tkval> SAFEARROW
 %nonassoc <i_tkval> ')'
 %left <i_tkval> '('
 %left '[' '{'
@@ -725,19 +727,19 @@ listop	:	LSTOP indirob argexpr /* map {...} @args or print $fh @args */
 			  TOKEN_GETMAD($2,$$,'(');
 			  TOKEN_GETMAD($5,$$,')');
 			}
-	|	term ARROW method lpar_or_qw listexprcom ')' /* $foo->bar(list) */
-			{ $$ = convert(OP_ENTERSUB, OPf_STACKED,
+	|	term arrow method lpar_or_qw listexprcom ')' /* $foo->bar(list) */
+			{ $$ = convert($2 == SAFEARROW ? OP_ENTERSUB_SAFE : OP_ENTERSUB, OPf_STACKED,
 				op_append_elem(OP_LIST,
 				    op_prepend_elem(OP_LIST, scalar($1), $5),
-				    newUNOP(OP_METHOD, 0, $3)));
+				    newUNOP($2 == SAFEARROW ? OP_METHOD_SAFE : OP_METHOD, 0, $3)));
 			  TOKEN_GETMAD($2,$$,'A');
 			  TOKEN_GETMAD($4,$$,'(');
 			  TOKEN_GETMAD($6,$$,')');
 			}
-	|	term ARROW method                     /* $foo->bar */
-			{ $$ = convert(OP_ENTERSUB, OPf_STACKED,
+	|	term arrow method                     /* $foo->bar */
+			{ $$ = convert($2 == SAFEARROW ? OP_ENTERSUB_SAFE : OP_ENTERSUB, OPf_STACKED,
 				op_append_elem(OP_LIST, scalar($1),
-				    newUNOP(OP_METHOD, 0, $3)));
+				    newUNOP($2 == SAFEARROW ? OP_METHOD_SAFE : OP_METHOD, 0, $3)));
 			  TOKEN_GETMAD($2,$$,'A');
 			}
 	|	METHOD indirob listexpr              /* new Class @args */
@@ -794,9 +796,9 @@ subscripted:    star '{' expr ';' '}'        /* *main::{something} */
 			  TOKEN_GETMAD($2,$$,'[');
 			  TOKEN_GETMAD($4,$$,']');
 			}
-	|	term ARROW '[' expr ']'      /* somearef->[$element] */
+	|	term arrow '[' expr ']'      /* somearef->[$element] */
 			{ $$ = newBINOP(OP_AELEM, 0,
-					ref(newAVREF($1),OP_RV2AV),
+					ref(newAVREF($1),$2 == SAFEARROW ? OP_RV2AV_NOVIVIFY : OP_RV2AV),
 					scalar($4));
 			  TOKEN_GETMAD($2,$$,'a');
 			  TOKEN_GETMAD($3,$$,'[');
@@ -816,9 +818,9 @@ subscripted:    star '{' expr ';' '}'        /* *main::{something} */
 			  TOKEN_GETMAD($4,$$,';');
 			  TOKEN_GETMAD($5,$$,'}');
 			}
-	|	term ARROW '{' expr ';' '}' /* somehref->{bar();} */
+	|	term arrow '{' expr ';' '}' /* somehref->{bar();} */
 			{ $$ = newBINOP(OP_HELEM, 0,
-					ref(newHVREF($1),OP_RV2HV),
+					ref(newHVREF($1),$2 == SAFEARROW ? OP_RV2HV_NOVIVIFY : OP_RV2HV),
 					jmaybe($4));
 			    PL_parser->expect = XOPERATOR;
 			  TOKEN_GETMAD($2,$$,'a');
@@ -835,21 +837,22 @@ subscripted:    star '{' expr ';' '}'        /* *main::{something} */
 			  TOKEN_GETMAD($4,$$,';');
 			  TOKEN_GETMAD($5,$$,'}');
 			}
-	|	term ARROW '(' ')'          /* $subref->() */
-			{ $$ = newUNOP(OP_ENTERSUB, OPf_STACKED,
+	|	term arrow '(' ')'          /* $subref->() */
+			{ $$ = newUNOP($2 == SAFEARROW ? OP_ENTERSUB_SAFE : OP_ENTERSUB, OPf_STACKED,
 				   newCVREF(0, scalar($1)));
 			  TOKEN_GETMAD($2,$$,'a');
 			  TOKEN_GETMAD($3,$$,'(');
 			  TOKEN_GETMAD($4,$$,')');
 			}
-	|	term ARROW '(' expr ')'     /* $subref->(@args) */
-			{ $$ = newUNOP(OP_ENTERSUB, OPf_STACKED,
+	|	term arrow '(' expr ')'     /* $subref->(@args) */
+			{ $$ = newUNOP($2 == SAFEARROW ? OP_ENTERSUB_SAFE : OP_ENTERSUB, OPf_STACKED,
 				   op_append_elem(OP_LIST, $4,
 				       newCVREF(0, scalar($1))));
 			  TOKEN_GETMAD($2,$$,'a');
 			  TOKEN_GETMAD($3,$$,'(');
 			  TOKEN_GETMAD($5,$$,')');
 			}
+
 
 	|	subscripted lpar_or_qw expr ')'   /* $foo->{bar}->(@args) */
 			{ $$ = newUNOP(OP_ENTERSUB, OPf_STACKED,
@@ -1366,4 +1369,11 @@ indirob	:	WORD
 
 	|	PRIVATEREF
 			{ $$ = $1; }
+	;
+
+/* Arrows */
+arrow	:	ARROW
+			{ $$ = ARROW }
+	| 	SAFEARROW
+			{ $$ = SAFEARROW }
 	;

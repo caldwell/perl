@@ -1926,6 +1926,10 @@ Perl_doref(pTHX_ OP *o, I32 type, bool set_op_ref)
     case OP_RV2HV:
 	if (set_op_ref)
 	    o->op_flags |= OPf_REF;
+	if (type == OP_RV2AV_NOVIVIFY)
+	    o->op_type = OP_RV2AV_NOVIVIFY;
+	if (type == OP_RV2HV_NOVIVIFY)
+	    o->op_type = OP_RV2HV_NOVIVIFY;
 	/* FALL THROUGH */
     case OP_RV2GV:
 	if (type == OP_DEFINED)
@@ -8003,7 +8007,7 @@ Perl_ck_method(pTHX_ OP *o)
 	    else {
 		kSVOP->op_sv = NULL;
 	    }
-	    cmop = newSVOP(OP_METHOD_NAMED, 0, sv);
+	    cmop = newSVOP(o->op_type == OP_METHOD_SAFE ? OP_METHOD_NAMED_SAFE : OP_METHOD_NAMED, 0, sv);
 #ifdef PERL_MAD
 	    op_getmad(o,cmop,'O');
 #else
@@ -9025,7 +9029,8 @@ Perl_ck_subr(pTHX_ OP *o)
     if (cvop->op_type == OP_RV2CV) {
 	o->op_private |= (cvop->op_private & OPpENTERSUB_AMPER);
 	op_null(cvop);
-    } else if (cvop->op_type == OP_METHOD || cvop->op_type == OP_METHOD_NAMED) {
+    } else if (cvop->op_type == OP_METHOD || cvop->op_type == OP_METHOD_NAMED ||
+	       cvop->op_type == OP_METHOD_SAFE || cvop->op_type == OP_METHOD_NAMED_SAFE) {
 	if (aop->op_type == OP_CONST)
 	    aop->op_private &= ~OPpCONST_STRICT;
 	else if (aop->op_type == OP_LIST) {

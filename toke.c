@@ -368,6 +368,7 @@ static struct debug_tokens {
     { PRIVATEREF,	TOKENTYPE_OPVAL,	"PRIVATEREF" },
     { REFGEN,		TOKENTYPE_NONE,		"REFGEN" },
     { RELOP,		TOKENTYPE_OPNUM,	"RELOP" },
+    { SAFEARROW,	TOKENTYPE_NONE,		"SAFEARROW" },
     { SHIFTOP,		TOKENTYPE_OPNUM,	"SHIFTOP" },
     { SUB,		TOKENTYPE_NONE,		"SUB" },
     { THING,		TOKENTYPE_OPVAL,	"THING" },
@@ -5122,16 +5123,23 @@ Perl_yylex(pTHX)
 		    OPERATOR(PREDEC);
 	    }
 	    else if (*s == '>') {
+		int arrow = ARROW;
 		s++;
+		if (0) { /* This is weird, but the alternative is copying
+			  * and pasting this whole bit of heuristic code
+			  * just for the SAFEARROW TOKEN/OPERATOR/TERM. */
+		  safe_arrow:
+		    arrow = SAFEARROW;
+		}
 		s = SKIPSPACE1(s);
 		if (isIDFIRST_lazy_if(s,UTF)) {
 		    s = force_word(s,METHOD,FALSE,TRUE,FALSE);
-		    TOKEN(ARROW);
+		    TOKEN(arrow);
 		}
 		else if (*s == '$')
-		    OPERATOR(ARROW);
+		    OPERATOR(arrow);
 		else
-		    TERM(ARROW);
+		    TERM(arrow);
 	    }
 	    if (PL_expect == XOPERATOR)
 		Aop(OP_SUBTRACT);
@@ -5626,8 +5634,13 @@ Perl_yylex(pTHX)
 	TOKEN(';');
     case '&':
 	s++;
-	if (*s++ == '&')
+	if (*s++ == '&') {
+	    if (s[0] == '-' && s[1] == '>') {
+		s += 2;
+		goto safe_arrow;
+	    }
 	    AOPERATOR(ANDAND);
+	}
 	s--;
 	if (PL_expect == XOPERATOR) {
 	    if (PL_bufptr == PL_linestart && ckWARN(WARN_SEMICOLON)

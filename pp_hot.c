@@ -821,7 +821,7 @@ PP(pp_rv2av)
     const I32 gimme = GIMME_V;
     static const char an_array[] = "an ARRAY";
     static const char a_hash[] = "a HASH";
-    const bool is_pp_rv2av = PL_op->op_type == OP_RV2AV;
+    const bool is_pp_rv2av = PL_op->op_type == OP_RV2AV || PL_op->op_type == OP_RV2AV_NOVIVIFY;
     const svtype type = is_pp_rv2av ? SVt_PVAV : SVt_PVHV;
 
     if (!(PL_op->op_private & OPpDEREFed))
@@ -848,6 +848,8 @@ PP(pp_rv2av)
 	    Perl_croak(aTHX_ "%s", PL_no_localize_ref);
     }
     else {
+	if (!SvOK(sv) && (PL_op->op_type == OP_RV2AV_NOVIVIFY || PL_op->op_type == OP_RV2HV_NOVIVIFY))
+	    RETSETUNDEF;
 	if (SvTYPE(sv) == type) {
 	    if (PL_op->op_flags & OPf_REF) {
 		SETs(sv);
@@ -2793,6 +2795,13 @@ PP(pp_entersub)
 	    RETURN;
 	}
 	SvGETMAGIC(sv);
+	if (!SvOK(sv) && PL_op->op_type == OP_ENTERSUB_SAFE) { /* undef &&-> () */
+	    if (hasargs)
+		SP = PL_stack_base + POPMARK;
+	    else
+		(void)POPMARK;
+	    RETPUSHUNDEF;
+	}
 	if (SvROK(sv)) {
 	    sv = amagic_deref_call(sv, to_cv_amg);
 	    /* Don't SPAGAIN here.  */
@@ -3010,8 +3019,9 @@ PP(pp_aelem)
     SV* const elemsv = POPs;
     IV elem = SvIV(elemsv);
     AV *const av = MUTABLE_AV(POPs);
+    const bool bad_av = SvTYPE(av) != SVt_PVAV; /* f($a&&->[0]) will cause av to be undef if $a is undef. */
     const U32 lval = PL_op->op_flags & OPf_MOD || LVRET;
-    const U32 defer = (PL_op->op_private & OPpLVAL_DEFER) && (elem > av_len(av));
+    const U32 defer = !bad_av && (PL_op->op_private & OPpLVAL_DEFER) && (elem > av_len(av));
     const bool localizing = PL_op->op_private & OPpLVAL_INTRO;
     bool preeminent = TRUE;
     SV *sv;
@@ -3022,7 +3032,7 @@ PP(pp_aelem)
 		    SVfARG(elemsv));
     if (elem > 0)
 	elem -= CopARYBASE_get(PL_curcop);
-    if (SvTYPE(av) != SVt_PVAV)
+    if (bad_av)
 	RETPUSHUNDEF;
 
     if (localizing) {
@@ -3149,9 +3159,15 @@ S_method_common(pTHX_ SV* meth, U32* hashp)
 
     PERL_ARGS_ASSERT_METHOD_COMMON;
 
-    if (!sv)
-	Perl_croak(aTHX_ "Can't call method \"%"SVf"\" on an undefined value",
-		   SVfARG(meth));
+    if (!sv) {
+	if (PL_op->op_type == OP_METHOD_SAFE || PL_op->op_type == OP_METHOD_NAMED_SAFE) { /* undef &&-> method */
+	    return &PL_sv_undef;
+	} else {
+	    PerlIO_printf(PerlIO_stderr(), "PL_op: %d %x\n", PL_op->op_type, PL_op->op_private);
+	    Perl_croak(aTHX_ "Can't call method \"%"SVf"\" on an undefined value",
+		       SVfARG(meth));
+	}
+    }
 
     SvGETMAGIC(sv);
     if (SvROK(sv))
@@ -3173,6 +3189,9 @@ S_method_common(pTHX_ SV* meth, U32* hashp)
 	    !(iogv = gv_fetchsv(sv, 0, SVt_PVIO)) ||
 	    !(ob=MUTABLE_SV(GvIO(iogv))))
 	{
+	    if (!SvOK(sv) && (PL_op->op_type == OP_METHOD_SAFE || PL_op->op_type == OP_METHOD_NAMED_SAFE)) /* undef &&-> method */
+		return &PL_sv_undef;
+
 	    /* this isn't the name of a filehandle either */
 	    if (!packname ||
 		((UTF8_IS_START(*packname) && DO_UTF8(sv))
