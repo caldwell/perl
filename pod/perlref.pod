@@ -387,7 +387,9 @@ statement, C<$array[$x]> may have been undefined.  If so, it's
 automatically defined with a hash reference so that we can look up
 C<{"foo"}> in it.  Likewise C<< $array[$x]->{"foo"} >> will automatically get
 defined with an array reference so that we can look up C<[0]> in it.
-This process is called I<autovivification>.
+This process is called I<autovivification>.  If you don't want the
+autovivification behavior you can use the safe arrow operator, "C<< &&-> >>"
+(see L<perlop> for more details).
 
 One more thing here.  The arrow is optional I<between> brackets
 subscripts, so you can shrink the above down to

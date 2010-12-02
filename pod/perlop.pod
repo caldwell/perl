@@ -31,7 +31,7 @@ for C folks.)  With very few exceptions, these all operate on scalar
 values only, not array values.
 
     left	terms and list operators (leftward)
-    left	->
+    left	-> &&->
     nonassoc	++ --
     right	**
     right	! ~ \ and unary + and -
@@ -136,6 +136,45 @@ Otherwise, the right side is a method name or a simple scalar
 variable containing either the method name or a subroutine reference,
 and the left side must be either an object (a blessed reference)
 or a class name (that is, a package name).  See L<perlobj>.
+
+=head2 The Safe Arrow Operator
+X<safe arrow> X<safe dereference> X<< &&-> >>
+
+"C<< &&-> >>" is very similar to the Arrow Operator ("C<< -> >>") except
+that it behaves differently when the left side is an C<undef> value, in
+which case the result of the expression is also C<undef>.  This allows you
+to simplify the dereferencing of complex nested objects or data structures
+where undef is an expected possibility:
+
+    # Do this:
+    $a&&->method&&->{hash}&&->[0]&&->();
+
+    # Instead of this:
+    $a &&
+    $a->method &&
+    $a->method->{hash} &&
+    $a->method->{hash}->[0] &&
+    $a->method->{hash}->[0]->();
+
+The result of the using the "C<< &&-> >>" on hash or array results will
+avoid Perl's default autovivifying behavior (see L<perlref>).  For instance,
+this:
+
+    my $x;
+    $x->{y}->{z}&&->{p} &&= 4;
+
+is equivalent to this:
+
+    my $x = { y => {} };
+
+Mixing "C<< -> >>" and "C<< &&-> >>" can be useful with methods too:
+
+    $a&&->method1->method2;
+
+The expression assumes that $a may be C<undef> and so there will be no error
+attempting to call the method operator "method1" but "method1", if called
+because $a is not undef, is expected to return a valid reference such that
+method2 can be called (and if it doesn't then there will be a fatal error).
 
 =head2 Auto-increment and Auto-decrement
 X<increment> X<auto-increment> X<++> X<decrement> X<auto-decrement> X<-->

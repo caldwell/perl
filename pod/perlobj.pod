@@ -237,7 +237,7 @@ and then uses that as an ordinary reference.
     }
 
 =head2 Method Invocation
-X<invocation> X<method> X<arrow> X<< -> >>
+X<invocation> X<method> X<arrow> X<< -> >> X<safe arrow> X<< &&-> >>
 
 For various historical and other reasons, Perl offers two equivalent
 ways to write a method call.  The simpler and more common way is to use
@@ -246,9 +246,9 @@ the arrow notation:
     my $fred = Critter->find("Fred");
     $fred->display("Height", "Weight");
 
-You should already be familiar with the use of the C<< -> >> operator with
-references.  In fact, since C<$fred> above is a reference to an object,
-you could think of the method call as just another form of
+You should already be familiar with the use of the C<< -> >> and C<< &&-> >>
+operators with references.  In fact, since C<$fred> above is a reference to
+an object, you could think of the method call as just another form of
 dereferencing.
 
 Whatever is on the left side of the arrow, whether a reference or a
